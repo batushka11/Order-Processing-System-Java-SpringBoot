@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>ZAV - Register</title>
+  <link rel="stylesheet" th:href="@{/register.css}">
+  <link rel="preconnect" href="https://fonts.gstatic.com" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+<div class="background">
+  <div class="shape"></div>
+  <div class="shape"></div>
+</div>
+<form th:action="@{/auth/register}" th:method="POST" th:object="${user}" onsubmit="return validateForm()">
+  <h3>Register</h3>
+
+  <label for="username">Username</label>
+  <input
+          type="text"
+          placeholder="Username"
+          id="username"
+          name="username"
+          th:field="*{username}"
+          pattern="^[a-zA-Z0-9._-]{5,20}$"
+          title="Username must be 5-20 characters long and can contain letters, numbers, dots, underscores, or dashes."
+          required
+  />
+
+  <label for="password">Password</label>
+  <input
+          type="password"
+          placeholder="Password"
+          id="password"
+          name="password"
+          th:field="*{password}"
+          pattern="^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=]).{8,}$"
+          title="Password must be at least 8 characters long, contain one uppercase letter, one lowercase letter, one number, and one special character."
+          required
+  />
+
+  <label for="submit_password">Repeat password</label>
+  <input
+          type="password"
+          placeholder="Repeat password"
+          id="submit_password"
+          name="submit_password"
+          required
+  />
+
+  <div th:if="${error != null}">
+    <p style="color: red" th:text="${error}"></p>
+  </div>
+  <input type="submit" value="Register" />
+  <span>Already have an account? <a th:href="@{/auth/login}">Log In</a></span>
+</form>
+
+<footer th:include="~{footer}"></footer>
+
+<script>
+  function validateForm() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('submit_password').value;
+    const errorMessage = document.getElementById('error-message');
+
+    if (password !== confirmPassword) {
+      errorMessage.style.display = 'block';
+      errorMessage.textContent = 'Passwords do not match.';
+      return false;
+    }
+
+    errorMessage.style.display = 'none';
+    return true;
+  }
+</script>
+</body>
+</html>

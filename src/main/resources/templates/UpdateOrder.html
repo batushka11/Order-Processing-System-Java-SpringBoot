@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>ZAV - Update</title>
+    <link rel="stylesheet" th:href="@{/update.css}">
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+<form th:action="@{/orders/{id}(id=${order.id})}" th:object="${order}" th:method="PATCH">
+    <h1>Update Order</h1>
+
+    <div th:if="${order.sendTime == null || order.takeTime == null}">
+
+        <div th:if="${order.sendTime == null}">
+        <p>Receiver</p>
+        <input type="text" placeholder="Fullname" name="receiver"
+               th:field="*{receiver}"
+               pattern="^[A-Z][a-z]+ [A-Z][a-z]+$"
+               title="Fullname must consist of a first name and last name, each starting with a capital letter, separated by a space."
+               required>
+        </div>
+
+        <div th:if="${order.sendTime == null}">
+            <p>Count</p>
+            <input type="number" step="1" placeholder="Count" name="count"
+                   min="1" th:field="*{count}"
+                   title="Price must be a positive integer."
+                   required>
+        </div>
+
+        <div th:if="${order.sendTime == null}">
+            <p>Send Time</p>
+            <input type="datetime-local" name="sendTime"
+                   th:field="*{sendTime}"
+                   th:attr="value=${order.sendTime != null ? #temporals.format(order.sendTime, 'yyyy-MM-dd HH:mm:ss') : null}"
+                   title="Select a valid send time.">
+        </div>
+
+        <div th:if="${order.sendTime != null}">
+            <p>Take Time</p>
+            <input type="datetime-local" name="takeTime"
+                   th:field="*{takeTime}"
+                   th:attr="value=${order.takeTime != null ? #temporals.format(order.takeTime, 'yyyy-MM-dd HH:mm:ss') : null}"
+                   title="Select a valid take time.">
+        </div>
+        <br>
+        <div th:if="${errorMessage != null}">
+            <p style="color:red;" th:text="${errorMessage}"></p>
+        </div>
+        <button type="submit">Update order</button>
+    </div>
+    <div th:if="${order.sendTime != null && order.takeTime != null}">
+        <p class="text">Order is taken. Cannot update.</p>
+    </div>
+    <a th:href="@{/orders}">Back to orders</a>
+</form>
+
+
+<footer th:include="~{footer}"></footer>
+</body>
+</html>

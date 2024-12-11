@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders List</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="table.css">
+    <script>
+        let originalRows = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const rows = Array.from(document.querySelectorAll('#table tbody tr'));
+            originalRows = rows.map(row => row.cloneNode(true));
+        });
+
+        function applyOrderFilters() {
+            const receiver = document.getElementById('receiver').value.toLowerCase();
+            const manager = document.getElementById('manager').value;
+            const good = document.getElementById('good').value.toLowerCase();
+            const minOrderPrice = parseFloat(document.getElementById('minOrderPrice').value) || 0;
+            const maxOrderPrice = parseFloat(document.getElementById('maxOrderPrice').value) || Infinity;
+
+            const rows = document.querySelectorAll('#table tbody tr');
+
+            rows.forEach(row => {
+                const rowReceiver = row.cells[0].innerText.toLowerCase();
+                const rowManager = row.cells[1].innerText;
+                const rowGood = row.cells[2].innerText.toLowerCase();
+                const rowPrice = parseFloat(row.cells[4].innerText.replace(/[^0-9.-]+/g, ''));
+
+                const matchesFilter =
+                    (receiver === '' || rowReceiver.includes(receiver)) &&
+                    (manager === 'ANY' || rowManager === manager) &&
+                    (good === '' || rowGood.includes(good)) &&
+                    (rowPrice >= minOrderPrice && rowPrice <= maxOrderPrice);
+
+                row.style.display = matchesFilter ? '' : 'none';
+            });
+        }
+
+        function sortTable(columnIndex, isNumeric = false) {
+            const table = document.querySelector('#table tbody');
+            const rows = Array.from(table.rows);
+            const currentOrder = table.dataset.sortOrder === 'ASC' ? 'DESC' : 'ASC';
+            const icon = document.querySelectorAll('.sortable i')[columnIndex];
+
+            rows.sort((a, b) => {
+                const aValue = isNumeric
+                    ? parseFloat(a.cells[columnIndex].innerText.replace(/[^0-9.-]+/g, ''))
+                    : a.cells[columnIndex].innerText;
+                const bValue = isNumeric
+                    ? parseFloat(b.cells[columnIndex].innerText.replace(/[^0-9.-]+/g, ''))
+                    : b.cells[columnIndex].innerText;
+
+                if (currentOrder === 'ASC') {
+                    return aValue > bValue ? 1 : -1;
+                } else {
+                    return aValue < bValue ? 1 : -1;
+                }
+            });
+
+            rows.forEach(row => table.appendChild(row));
+            table.dataset.sortOrder = currentOrder;
+
+            document.querySelectorAll('.sortable i').forEach(i => i.className = 'fas fa-sort');
+            icon.className = currentOrder === 'ASC' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+        }
+
+        function resetOrderFilters() {
+            document.getElementById('receiver').value = '';
+            document.getElementById('manager').value = 'ANY';
+            document.getElementById('good').value = '';
+            document.getElementById('minOrderPrice').value = '';
+            document.getElementById('maxOrderPrice').value = '';
+            applyOrderFilters();
+        }
+
+        function resetTableSorting() {
+            const tableBody = document.querySelector('#table tbody');
+            tableBody.innerHTML = '';
+            originalRows.forEach(row => tableBody.appendChild(row.cloneNode(true)));
+            document.querySelectorAll('.sortable i').forEach(i => i.className = 'fas fa-sort');
+            tableBody.dataset.sortOrder = 'ASC';
+        }
+
+        function toggleMenu() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('open');
+            document.body.classList.toggle('menu-open');
+        }
+    </script>
+</head>
+<body>
+<div class="sidebar">
+    <div class="user-info">
+        <img src="https://pics.craiyon.com/2023-08-01/9fad2538dbf94cc482f1cf1923285481.webp" alt="User Avatar" class="avatar">
+        <div class="user-details">
+            <p class="username" th:text="${#authentication.name}"></p>
+            <p class="role" th:text="${#strings.substringAfter(#authentication.authorities[0].authority, 'ROLE_')}"></p>
+        </div>
+    </div>
+    <ul class="menu" id="sideMenu">
+        <li><a th:href="@{/home}">Home</a></li>
+        <li><a th:href="@{/goods}">Goods</a></li>
+        <li><a th:href="@{/orders}">Orders</a></li>
+    </ul>
+    <div class="logout-container">
+        <form th:action="@{/auth/logout}" method="post">
+            <button type="submit" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </form>
+    </div>
+</div>
+<button class="menu-toggle" onclick="toggleMenu()">
+    <i class="fas fa-bars"></i>
+</button>
+
+<div class="content">
+    <div class="cnt">
+        <a th:href="@{/orders/new}" class="add">Add New Order</a>
+        <form id="filterForm" onsubmit="event.preventDefault();">
+            <input type="text" placeholder="Filter by Receiver" id="receiver" oninput="applyOrderFilters()">
+            <select id="manager" onchange="applyOrderFilters()">
+                <option value="ANY" selected>Manager: Any</option>
+                <option value="IVANYK">Ivanyk</option>
+                <option value="PETRUK">Petruk</option>
+                <option value="JANIUK">Janiuk</option>
+            </select>
+            <input type="text" placeholder="Filter by Good" id="good" oninput="applyOrderFilters()">
+            <input type="number" placeholder="Min Order Price" id="minOrderPrice" oninput="applyOrderFilters()">
+            <input type="number" placeholder="Max Order Price" id="maxOrderPrice" oninput="applyOrderFilters()">
+            <button type="button" onclick="resetOrderFilters()" class="default-btn">Reset Filters</button>
+            <button type="button" onclick="resetTableSorting()" class="default-btn">Reset Sorting</button>
+        </form>
+    </div>
+
+    <div class="table-container">
+        <table id="table" data-sort-order="ASC">
+            <thead>
+            <tr>
+                <th>Receiver</th>
+                <th>Manager</th>
+                <th>Good</th>
+                <th>Count</th>
+                <th class="sortable" onclick="sortTable(4, true)">Order Price <i class="fas fa-sort"></i></th>
+                <th class="sortable" onclick="sortTable(5)">Create Time <i class="fas fa-sort"></i></th>
+                <th class="sortable" onclick="sortTable(6)">Send Time <i class="fas fa-sort"></i></th>
+                <th class="sortable" onclick="sortTable(7)">Take Time <i class="fas fa-sort"></i></th>
+                <th sec:authorize="hasRole('ADMIN')">Update</th>
+                <th sec:authorize="hasRole('ADMIN')">Delete</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="order : ${orders}">
+                <td th:text="${order.receiver}"></td>
+                <td th:text="${order.manager}"></td>
+                <td th:text="${order.good.nazva}"></td>
+                <td th:text="${order.count}"></td>
+                <td th:text="${order.priceOrder}"></td>
+                <td th:text="${#temporals.format(order.createTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                <td th:text="${order.sendTime == null ? 'In process' : #temporals.format(order.sendTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                <td th:text="${order.takeTime == null ? 'In process' : #temporals.format(order.takeTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                <td sec:authorize="hasRole('ADMIN')">
+                    <form th:action="@{/orders/edit/{id}(id=${order.id})}" th:method="PATCH">
+                        <button type="submit" class="update">Update</button>
+                    </form>
+                </td>
+                <td sec:authorize="hasRole('ADMIN')">
+                    <form th:action="@{/orders/delete/{id}(id=${order.id})}" th:method="DELETE" onsubmit="return confirm('Are you sure you want to delete this order?');">
+                        <button type="submit" class="delete">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<footer th:include="~{footer}"></footer>
+</body>
+</html>

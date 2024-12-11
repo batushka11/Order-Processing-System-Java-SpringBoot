@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>ZAV - Save</title>
+  <link rel="stylesheet" th:href="@{/create.css}">
+  <link rel="preconnect" href="https://fonts.gstatic.com" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+<form th:action="@{/orders}" th:object="${order}" th:method="POST">
+  <h1>Create new order</h1>
+
+  <p>Receiver</p>
+  <input type="text" placeholder="Fullname" name="receiver"
+         th:field="*{receiver}"
+         pattern="^[A-Z][a-z]+ [A-Z][a-z]+$"
+         title="Fullname must consist of a first name and last name, each starting with a capital letter, separated by a space."
+         required>
+
+  <p>Good</p>
+  <select name="good" th:field="*{good}" required>
+    <option value="" disabled selected>Select a Good</option>
+    <option th:each="good : ${goods}"
+            th:value="${good.id}"
+            th:text="${good.nazva}">
+    </option>
+  </select>
+
+
+  <p>Count</p>
+  <input type="number" step="1" placeholder="Count" name="count"
+         min="1" th:field="*{count}"
+         title="Price must be a positive integer."
+         required>
+
+  <br>
+  <button type="submit">Create order</button>
+
+  <a th:href="@{/orders}">Back to orders</a>
+
+  <div th:if="${errorMessage != null}">
+    <p style="color:red;" th:text="${errorMessage}"></p>
+  </div>
+</form>
+<footer th:include="~{footer}"></footer>
+</body>
+</html>

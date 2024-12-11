@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>ZAV - Login</title>
+    <link rel="stylesheet" th:href="@{/login.css}">
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+<div class="background">
+    <div class="shape"></div>
+    <div class="shape"></div>
+</div>
+<form th:action="@{/auth/login}" th:method="POST" th:object="${user}">
+    <h3>Login</h3>
+
+    <label for="username">Username</label>
+    <input
+            type="text"
+            placeholder="Username"
+            id="username"
+            name="username"
+            th:field="*{username}"
+            required
+    />
+
+    <label for="password">Password</label>
+    <input
+            type="password"
+            placeholder="Password"
+            id="password"
+            name="password"
+            th:field="*{password}"
+            required
+    />
+    <div th:if="${error != null}">
+        <p style="color: red" th:text="${error}"></p>
+    </div>
+    <input type="submit" value="Log In" />
+    <span>Don't have an account? <a th:href="@{/auth/register}">Register</a></span>
+</form>
+
+<footer th:include="~{footer}"></footer>
+</body>
+</html>

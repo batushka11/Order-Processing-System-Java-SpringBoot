@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goods List</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="table.css">
+    <script>
+        let originalRows = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const rows = Array.from(document.querySelectorAll('#table tbody tr'));
+            originalRows = rows.map(row => row.cloneNode(true));
+        });
+
+        function applyFilters() {
+            var name = document.getElementById('name').value.toLowerCase();
+            var article = document.getElementById('article').value.toLowerCase();
+            var minPrice = document.getElementById('minPrice').value;
+            var maxPrice = document.getElementById('maxPrice').value;
+            var selectedCategory = document.getElementById('category').value;
+            var sortOrder = document.getElementById('sortPrice').value;
+
+            minPrice = minPrice ? parseFloat(minPrice) : 0;
+            maxPrice = maxPrice ? parseFloat(maxPrice) : Infinity;
+
+            var rows = document.querySelectorAll('#table tbody tr');
+            rows.forEach(function (row) {
+                var itemName = row.cells[1].innerText.toLowerCase();
+                var itemArticle = row.cells[2].innerText.toLowerCase();
+                var price = parseFloat(row.cells[3].innerText.replace(/[^0-9.-]+/g, ""));
+                var category = row.cells[0].innerText;
+
+                var showRow = (name === '' || itemName.includes(name)) &&
+                    (article === '' || itemArticle.includes(article)) &&
+                    (price >= minPrice && price <= maxPrice) &&
+                    (selectedCategory === 'ANY' || category === selectedCategory);
+
+                row.style.display = showRow ? '' : 'none';
+            });
+
+            if(sortOrder !== 'DEFAULT')
+                sortByPrice(sortOrder);
+        }
+
+        function sortByPrice(order) {
+            var table = document.getElementById('table').getElementsByTagName('tbody')[0];
+            var rows = Array.from(table.getElementsByTagName('tr'));
+
+            rows.sort(function (a, b) {
+                var priceA = parseFloat(a.cells[3].innerText.replace(/[^0-9.-]+/g, ""));
+                var priceB = parseFloat(b.cells[3].innerText.replace(/[^0-9.-]+/g, ""));
+                return order === 'ASC' ? priceA - priceB : priceB - priceA;
+            });
+
+            rows.forEach(function (row) {
+                table.appendChild(row);
+            });
+        }
+
+        function resetFilters() {
+            document.getElementById('name').value = '';
+            document.getElementById('article').value = '';
+            document.getElementById('minPrice').value = '';
+            document.getElementById('maxPrice').value = '';
+            document.getElementById('category').value = 'ANY';
+            document.getElementById('sortPrice').value = 'DEFAULT';
+            applyFilters();
+            resetTableSorting();
+        }
+
+        function toggleMenu() {
+            var sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('open');
+            document.body.classList.toggle('menu-open');
+        }
+
+        function resetTableSorting() {
+            const tableBody = document.querySelector('#table tbody');
+            tableBody.innerHTML = '';
+            originalRows.forEach(row => tableBody.appendChild(row.cloneNode(true)));
+        }
+    </script>
+</head>
+<body>
+<div class="sidebar">
+    <div class="user-info">
+        <img src="https://pics.craiyon.com/2023-08-01/9fad2538dbf94cc482f1cf1923285481.webp" alt="User Avatar" class="avatar">
+        <div class="user-details">
+            <p class="username" th:text="${#authentication.name}"></p>
+            <p class="role" th:text="${#strings.substringAfter(#authentication.authorities[0].authority, 'ROLE_')}"></p>
+
+        </div>
+    </div>
+    <ul class="menu" id="sideMenu">
+        <li><a th:href="@{/home}">Home</a></li>
+        <li><a th:href="@{/goods}">Goods</a></li>
+        <li><a th:href="@{/orders}">Orders</a></li>
+    </ul>
+    <div class="logout-container">
+        <form th:action="@{/auth/logout}" method="post">
+            <button type="submit" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </form>
+    </div>
+</div>
+<button class="menu-toggle" onclick="toggleMenu()">
+    <i class="fas fa-bars"></i>
+</button>
+
+<div class="content">
+    <div class="cnt">
+        <a th:href="@{/goods/new}" class="add" sec:authorize="hasRole('ADMIN')">Add new good</a>
+        <form id="findForm" onsubmit="event.preventDefault();">
+            <input type="text" placeholder="Enter a name" id="name" name="name" oninput="applyFilters()" onchange="applyFilters()">
+            <input type="text" placeholder="Enter an article" id="article" name="article" oninput="applyFilters()" onchange="applyFilters()">
+            <input type="number" placeholder="Enter min price" id="minPrice" name="price_min" oninput="applyFilters()" onchange="applyFilters()">
+            <input type="number" placeholder="Enter max price" id="maxPrice" name="price_max" oninput="applyFilters()" onchange="applyFilters()">
+            <select name="category" id="category" onchange="applyFilters()">
+                <option value="ANY" selected>Category: Any</option>
+                <option value="ELECTRONICS">Electronics</option>
+                <option value="CLOTHING">Clothing</option>
+                <option value="FURNITURE">Furniture</option>
+            </select>
+            <select id="sortPrice" name="sortPrice" onchange="applyFilters()">
+                <option value="DEFAULT" selected>Price sort: Default</option>
+                <option value="ASC">Price Ascending</option>
+                <option value="DESC">Price Descending</option>
+            </select>
+            <button type="button" onclick="resetFilters()" class="default-btn">Reset</button>
+        </form>
+    </div>
+    <div class="table-container">
+        <table id="table">
+            <thead>
+            <tr>
+                <th>Category</th>
+                <th>Name</th>
+                <th>Article</th>
+                <th>Price</th>
+                <th>PriceOpt</th>
+                <th sec:authorize="hasRole('ADMIN')">Update</th>
+                <th>Order</th>
+                <th sec:authorize="hasRole('ADMIN')">Delete</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="good : ${goods}">
+                <td th:text="${good.category}"></td>
+                <td th:text="${good.nazva}"></td>
+                <td th:text="${good.article}"></td>
+                <td th:text="${good.price}"></td>
+                <td th:text="${good.priceOpt}"></td>
+                <td sec:authorize="hasRole('ADMIN')">
+                    <form th:action="@{/goods/edit/{id}(id=${good.id})}" th:method="PATCH">
+                        <button type="submit" class="update">UPDATE</button>
+                    </form>
+                </td>
+                <td>
+                    <form th:action="@{/goods/{id}/orders/new(id=${good.id})}" th:method="GET">
+                        <button type="submit" class="order">ORDER</button>
+                    </form>
+                </td>
+                <td sec:authorize="hasRole('ADMIN')">
+                    <form th:action="@{/goods/delete/{id}(id=${good.id})}" th:method="DELETE" onsubmit="return confirm('Are you sure?');">
+                        <button type="submit" class="delete" th:disabled="${good.orders.size() > 0}">DELETE</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<footer th:include="~{footer}"></footer>
+</body>
+</html>
